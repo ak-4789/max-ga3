@@ -1,8 +1,10 @@
 name: Deploy Exercise 1
 on: push
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      script-file: ${{ steps.publish.outputs.my-file  }}
     steps:
       - name: Get the code
         uses: actions/checkout@v3
@@ -14,5 +16,27 @@ jobs:
         run: npm test
       - name: Build code
         run: npm run build
-      - name: Deploy code
-        run: echo "Deploying....."
+      - name: publish JS filename
+        id: publish
+        run: find dist/assets/*.js -type f - execdir echo 'myfile={}' >> $GITHUB_OUTPUT ';'
+      - name: upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-files
+          path: |
+            dist
+            package.json
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the artifacts
+        uses: actions/download-artifacts@v3
+        with:
+          name: dist-files
+      - name: Output Content
+        run: ls -lart
+      - name: Output JS filename
+        run: echo "${{ needs.build.outputs.scripts-files }}"
+      - name: Deploy
+        run: echo "Deploying.......!" 
